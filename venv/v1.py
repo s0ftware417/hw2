@@ -111,6 +111,29 @@ def how_simmilar_v3(a, b):
         return .00001 #this way i dont run into a divide by zero error, keeps eberything above 0
 
 
+def predickt_eu(nearest, train, movie):
+    if len(nearest) <= 0:
+        return 2.5
+    elif len(nearest) == 1:
+        return train[nearest[0][1]][movie]
+    else:
+        sum = 0
+        denom = 0
+        frac = 0
+        we_tot = 0
+        weight = 0
+        for user in nearest:
+            denom += user[0]
+        for user in nearest:
+            weight = 1- (user[0]/denom)
+            we_tot += weight
+            sum += weight * train[user[1]][movie]
+        frac = 1/we_tot
+        final = frac*sum
+        #print("?", final)
+        return final
+
+
 def euclidean(a, b):
     sum = 0
     for elem in a.keys():
@@ -167,7 +190,7 @@ def predickt_v2(nearest, train, movie):
 
 
 def test_prediction(train):
-    test = read_in("u1-test.test")
+    test = read_in("u1-base.base")
     #pprint(test)
     sum = 0
     for elem in tqdm(test):
@@ -198,7 +221,7 @@ def main():
     data = read_in("u1-base.base")
     train = organazize(data)
     starttime = time.time()
-    answers = test_prediction_k_loop(train, 1, 25)
+    answers = test_prediction(train)
     pprint(answers)
     print("Runtime was: ", time.time() - starttime)
 
