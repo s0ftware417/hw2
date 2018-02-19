@@ -82,7 +82,33 @@ def how_simmilar_v2(a, b):
     if at_least_one_in_common:
         return sum
     else:
-        return .00001
+        return .00001 #this way i dont run into a divide by zero error, keeps eberything above 0
+
+
+def how_simmilar_v3(a, b):
+    sum = 0
+    diff = 0
+    count = 0
+    at_least_one_in_common = False
+    if len(a) > len(b):
+        for elem in b.keys():
+            if elem in a.keys():
+                count += 1
+                at_least_one_in_common = True
+                diff = abs(a[elem] - b[elem])
+                sum += 1 / (2 ** diff)
+    else:
+        for elem in a.keys():
+            if elem in b.keys():
+                count += 1
+                at_least_one_in_common = True
+                diff = abs(a[elem] - b[elem])
+                sum += 1 / (2 ** diff)
+
+    if at_least_one_in_common:
+        return sum
+    else:
+        return .00001 #this way i dont run into a divide by zero error, keeps eberything above 0
 
 
 def euclidean(a, b):
@@ -107,7 +133,7 @@ def squad(train, user_num, movie_num, k): #finds the nesrest k userd by sommilar
     for elem in train.keys():
         if elem != user_num:
             if movie_num in train[elem].keys():
-                friendly_neighborhood_tuple = (how_simmilar_v2(train[user_num], train[elem]), elem)
+                friendly_neighborhood_tuple = (how_simmilar_v3(train[user_num], train[elem]), elem)
                 all_sim.append(friendly_neighborhood_tuple)
     top_k = sorted(all_sim, reverse=True)[0:k] #need to handle case where there arent k in all_sim
     return top_k
@@ -131,13 +157,13 @@ def predickt_v2(nearest, train, movie):
     else:
         sum = 0
         denom = 0
+        total_we = 0
         for user in nearest:
             denom += user[0]
         for user in nearest:
-            weighted = 1 - (user[0]/denom)
-            sum += (train[user[1]][movie]*weighted)/weighted
-        #print(sum)
-        return sum/10
+            sum += (train[user[1]][movie]*(user[0]/denom))
+        #print("sum", sum)
+        return sum
 
 
 def test_prediction(train):
@@ -145,36 +171,35 @@ def test_prediction(train):
     #pprint(test)
     sum = 0
     for elem in tqdm(test):
-        guess = predickt(squad(train, elem[0], elem[1], 10), train, elem[1])
+        guess = predickt_v2(squad(train, elem[0], elem[1], 3), train, elem[1])
         actual = elem[2]
         sum += (guess - actual)**2
     print("MSE =", sum/len(test))
 
+
 def test_prediction_k_loop(train, min, max):
-    test = read_in("tryme.txt")
+    test = read_in("u1-base.base")
     # pprint(test)
     results = []
-    for k in tqdm(range(min, max+1)):
+    for k in range(min, max+1):
         sum = 0
-        for elem in test:
-            guess = predickt(squad(train, elem[0], elem[1], k), train, elem[1])
+        for elem in tqdm(test):
+            guess = predickt_v2(squad(train, elem[0], elem[1], k), train, elem[1])
             actual = elem[2]
             sum += (guess - actual) ** 2
         MSE = sum / len(test)
         tuple = (k,MSE)
         results.append(tuple)
+        #print("for k =", k, "-> MSE =", MSE)
     return results
+
 
 def main():
     data = read_in("u1-base.base")
     train = organazize(data)
-    #print(euclidean(train[2], train[1]))
     starttime = time.time()
-    pprint(test_prediction_k_loop(train, 5, 10))
-    #movie = 122
-    #top = squad(train, 1, movie, 3)
-    #print(predickt(top,train,movie))
-    #print(top)
+    answers = test_prediction_k_loop(train, 1, 25)
+    pprint(answers)
     print("Runtime was: ", time.time() - starttime)
 
 
