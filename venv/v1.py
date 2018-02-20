@@ -31,7 +31,7 @@ def read_in(filename):  #reads in filename and puts it into an array of arrays c
     return data
 
 
-def how_simmilar(a,b): #initial version of my simmilarity function. doesn't even work now... but I keep it here to remember where i came from. never forget...
+def how_similar(a,b): #initial version of my similarity function. doesn't even work now... but I keep it here to remember where i came from. never forget...
     sum = 0
     diff = 0
     count = 0
@@ -59,12 +59,12 @@ def how_simmilar(a,b): #initial version of my simmilarity function. doesn't even
         return -1
 
 
-def how_simmilar_v2(a, b):
+def how_similar_v2(a, b):
     sum = 0
     diff = 0
     count = 0
     at_least_one_in_common = False
-    if len(a) > len(b):
+    if len(a) > len(b):  #me trying to be clever by running the shorter of the two loops
         for elem in b.keys():
             if elem in a.keys():
                 count += 1
@@ -85,7 +85,7 @@ def how_simmilar_v2(a, b):
         return .00001 #this way i dont run into a divide by zero error, keeps eberything above 0
 
 
-def how_simmilar_v3(a, b):
+def how_similar_v3(a, b):
     sum = 0
     diff = 0
     count = 0
@@ -111,29 +111,6 @@ def how_simmilar_v3(a, b):
         return .00001 #this way i dont run into a divide by zero error, keeps eberything above 0
 
 
-def predickt_eu(nearest, train, movie):
-    if len(nearest) <= 0:
-        return 2.5
-    elif len(nearest) == 1:
-        return train[nearest[0][1]][movie]
-    else:
-        sum = 0
-        denom = 0
-        frac = 0
-        we_tot = 0
-        weight = 0
-        for user in nearest:
-            denom += user[0]
-        for user in nearest:
-            weight = 1- (user[0]/denom)
-            we_tot += weight
-            sum += weight * train[user[1]][movie]
-        frac = 1/we_tot
-        final = frac*sum
-        #print("?", final)
-        return final
-
-
 def euclidean(a, b):
     sum = 0
     for elem in a.keys():
@@ -152,11 +129,10 @@ def euclidean(a, b):
 
 def squad_up_boyzzz(train, user_num, movie_num, k): #finds the nesrest k userd by sommilarity scores
     all_sim = []
-    dream_team = []
     for elem in train.keys():
-        if elem != user_num:
+        if elem != user_num: #in leave one out crossvalidation this is the line that leaves it out... rather redundant but true
             if movie_num in train[elem].keys():
-                friendly_neighborhood_tuple = (how_simmilar_v3(train[user_num], train[elem]), elem)
+                friendly_neighborhood_tuple = (how_similar_v3(train[user_num], train[elem]), elem)
                 all_sim.append(friendly_neighborhood_tuple)
     top_k = sorted(all_sim, reverse=True)[0:k] #need to handle case where there arent k in all_sim
     return top_k
@@ -187,26 +163,47 @@ def predickt_v2(nearest, train, movie):
         return sum
 
 
-def test_prediction(train): #this loop
-    test = read_in("u1-test.test")
+def predickt_eu(nearest, train, movie):
+    if len(nearest) <= 0:
+        return 2.5
+    elif len(nearest) == 1:
+        return train[nearest[0][1]][movie]
+    else:
+        sum = 0
+        denom = 0
+        frac = 0
+        we_tot = 0
+        weight = 0
+        for user in nearest:
+            denom += user[0]
+        for user in nearest:
+            weight = 1- (user[0]/denom)
+            we_tot += weight
+            sum += weight * train[user[1]][movie]
+        frac = 1/we_tot
+        final = frac*sum
+        #print("?", final)
+        return final
+
+
+def prediction(train, k, filename): #this loop runs once for one k value
+    test = read_in(filename)
     sum = 0
-    k = 3
     for elem in tqdm(test):
-        guess = predickt_v2(squad_up_boyzzz(train, elem[0], elem[1], k), train, elem[1]) #version check: make sure youre on the right version so you dont waste 2 hours trying to figure out whats wrong...
+        guess = predickt_v2(squad_up_boyzzz(train, elem[0], elem[1], k), train, elem[1])  #version check: make sure youre on the right version so you dont waste 2 hours trying to figure out whats wrong...
         actual = elem[2]
         sum += (guess - actual)**2
-    tuple_to_the_rescue = (k,sum/len(test))
+    tuple_to_the_rescue = (k, sum/len(test))
     return tuple_to_the_rescue
 
 
-def test_prediction_k_loop(train, min, max):
-    test = read_in("u1-base.base")
-    # pprint(test)
+def prediction_k_loop(train, min, max, filename):  #same as test_predicktion only it runs for a range of k values
+    test = read_in(filename)
     results = []
-    for k in range(min, max+1):
+    for k in range(min, max+1):  #this is how i do the leave one out. see more in squad_up_boyzzz() line 4
         sum = 0
         for elem in tqdm(test):
-            guess = predickt_v2(squad_up_boyzzz(train, elem[0], elem[1], k), train, elem[1]) #version check part 2
+            guess = predickt_v2(squad_up_boyzzz(train, elem[0], elem[1], k), train, elem[1])  #version check part 2
             actual = elem[2]
             sum += (guess - actual) ** 2
         MSE = sum / len(test)
@@ -219,7 +216,8 @@ def main():
     data = read_in("u1-base.base")
     train = organazize(data)
     starttime = time.time()
-    answers = test_prediction_k_loop(train, 14, 16)
+    answers = prediction(train, 3, "u1-test.test")
+    #answers = prediction_k_loop(train, 14, 16, "u1-base.base")
     pprint(answers)
     print("Runtime was: ", time.time() - starttime)
 
