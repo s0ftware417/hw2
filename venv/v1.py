@@ -1,11 +1,11 @@
-from pprint import pprint
-import time
-from math import sqrt
-from tqdm import tqdm
+from pprint import pprint  #god bless whoever made this
+import time  #I wish I could import more of this into my weekend...
+from math import sqrt  #gotta have sqrt
+from tqdm import tqdm  #this is the best thing ever
 
-def organazize(data): #could possibly implrove time slightly by combining organazize() and read_in()
-    train = {}
-    temp = {}
+def organazize(data): #could possibly implrove time slightly by combining organazize() and read_in() but its been a long week
+    train = {}  #my outer dictionary
+    temp = {}  #my temporary inner dictionary
     key = data[0][0]
     for entry in data:
         if (key == entry[0]):
@@ -15,11 +15,11 @@ def organazize(data): #could possibly implrove time slightly by combining organa
             temp = {}  # clear dictionary
             key = entry[0]
             temp[entry[1]] = entry[2]
-    train[key] = temp
+    train[key] = temp #catches the last user
     return train
 
 
-def read_in(filename):
+def read_in(filename):  #reads in filename and puts it into an array of arrays called data
     f = open(filename, 'r')
     data = []
     for line in f:
@@ -31,7 +31,7 @@ def read_in(filename):
     return data
 
 
-def how_simmilar(a,b):
+def how_simmilar(a,b): #initial version of my simmilarity function. doesn't even work now... but I keep it here to remember where i came from. never forget...
     sum = 0
     diff = 0
     count = 0
@@ -150,7 +150,7 @@ def euclidean(a, b):
         return sqrt(sum)
 
 
-def squad(train, user_num, movie_num, k): #finds the nesrest k userd by sommilarity scores
+def squad_up_boyzzz(train, user_num, movie_num, k): #finds the nesrest k userd by sommilarity scores
     all_sim = []
     dream_team = []
     for elem in train.keys():
@@ -171,8 +171,8 @@ def predickt(nearest, train, movie):
     else:
         return sum/len(nearest)
 
+
 def predickt_v2(nearest, train, movie):
-    #pprint(nearest)
     if len(nearest) <= 0:
         return 2.5
     elif len(nearest) == 1:
@@ -180,24 +180,23 @@ def predickt_v2(nearest, train, movie):
     else:
         sum = 0
         denom = 0
-        total_we = 0
         for user in nearest:
             denom += user[0]
         for user in nearest:
             sum += (train[user[1]][movie]*(user[0]/denom))
-        #print("sum", sum)
         return sum
 
 
-def test_prediction(train):
-    test = read_in("u1-base.base")
-    #pprint(test)
+def test_prediction(train): #this loop
+    test = read_in("u1-test.test")
     sum = 0
+    k = 3
     for elem in tqdm(test):
-        guess = predickt_v2(squad(train, elem[0], elem[1], 3), train, elem[1])
+        guess = predickt_v2(squad_up_boyzzz(train, elem[0], elem[1], k), train, elem[1]) #version check: make sure youre on the right version so you dont waste 2 hours trying to figure out whats wrong...
         actual = elem[2]
         sum += (guess - actual)**2
-    print("MSE =", sum/len(test))
+    tuple_to_the_rescue = (k,sum/len(test))
+    return tuple_to_the_rescue
 
 
 def test_prediction_k_loop(train, min, max):
@@ -207,21 +206,20 @@ def test_prediction_k_loop(train, min, max):
     for k in range(min, max+1):
         sum = 0
         for elem in tqdm(test):
-            guess = predickt_v2(squad(train, elem[0], elem[1], k), train, elem[1])
+            guess = predickt_v2(squad_up_boyzzz(train, elem[0], elem[1], k), train, elem[1]) #version check part 2
             actual = elem[2]
             sum += (guess - actual) ** 2
         MSE = sum / len(test)
         tuple = (k,MSE)
         results.append(tuple)
-        #print("for k =", k, "-> MSE =", MSE)
-    return results
+    return results #k-value index 0 resulting error index 1
 
 
 def main():
     data = read_in("u1-base.base")
     train = organazize(data)
     starttime = time.time()
-    answers = test_prediction(train)
+    answers = test_prediction_k_loop(train, 14, 16)
     pprint(answers)
     print("Runtime was: ", time.time() - starttime)
 
